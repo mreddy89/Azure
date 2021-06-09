@@ -1,0 +1,54 @@
+$connectionName = "AzureRunAsConnection"
+# Get the connection "AzureRunAsConnection "
+try
+{
+$servicePrincipalConnection = Get-AutomationConnection -Name $connectionName 
+"Logging in to Azure..."
+Connect-AzureRmAccount `
+-ServicePrincipal `
+-TenantId $servicePrincipalConnection.TenantId `
+-ApplicationId $servicePrincipalConnection.ApplicationId `
+-CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint 
+}
+catch 
+{
+if (!$servicePrincipalConnection)
+{ 
+$ErrorMessage = "Connection $connectionName not found."
+throw $ErrorMessage
+} 
+else
+{
+Write-Error -Message $_.Exception
+throw $_.Exception
+}
+}
+$sub = "ABI KR Non-Prod"
+$date = get-date
+$day = $date.Day
+$month = $date.Month
+$year = $date.Year
+
+Select-AzureRmSubscription $sub
+$fileName = $sub + "-ComputeQuota" + "_" + $day + "-" + $month + "-" +  $year + ".csv"
+$i=0
+$result = @()
+
+
+#Define location for which Quota needs to be checked
+$location="Korea_Central"
+
+#Get Quota for VMs
+$vms=Get-AzureRMVMUsage -Location $location | select @{label="Name";expression={$_.name.LocalizedValue}},currentvalue,limit
+
+#Get Quota for Storage Accounts
+$storages=Get-AzureRMStorageUsage -Location $location | select Name,currentvalue,limit
+
+#Get Quota for Network
+$networks=Get-AzureRMNetworkUsage -Location $location | select @{label="Name";expression={$_.resourcetype}},currentvalue,limit
+
+
+$setcontext = New-AzureStorageContext -StorageAccountName "StorageAccountName" -StorageAccountKey "cvGFAPYJwVNMuSnwmqiJqheNNbo/EoQmVpO7n+frWqjIIzNZROHfz+RQY8FJIxPD/V7DnfaNgC6UkyR6/Zhysg=="
+New-Item -Path $fileName -ItemType File 
+$result=$vms+$networks+$storages | Export-Csv -Path $fileName -NoTypeInformation 
+Set-AzureStorageBlobContent -Container "computequota" -File $fileName -Context $setcontext
