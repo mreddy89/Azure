@@ -1,0 +1,51 @@
+$connectionName = "AzureRunAsConnection"
+# Get the connection "AzureRunAsConnection "
+try
+{
+$servicePrincipalConnection = Get-AutomationConnection -Name $connectionName 
+"Logging in to Azure..."
+Connect-AzureRmAccount `
+-ServicePrincipal `
+-TenantId $servicePrincipalConnection.TenantId `
+-ApplicationId $servicePrincipalConnection.ApplicationId `
+-CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint 
+}
+catch 
+{
+if (!$servicePrincipalConnection)
+{ 
+$ErrorMessage = "Connection $connectionName not found."
+throw $ErrorMessage
+} 
+else
+{
+Write-Error -Message $_.Exception
+throw $_.Exception
+}
+}
+$sub = "ABI KR Non-Prod"
+$date = get-date
+$day = $date.Day
+$month = $date.Month
+$year = $date.Year
+
+Select-AzureRmSubscription $sub
+$pubip = Get-AzureRmPublicIpAddress
+$fileName = $sub + "-PubIP" + "_" + $day + "-" + $month + "-" +  $year + ".csv"
+$i=0
+$result = @()
+for($i -eq 0; $i -lt $pubip.Count; $i++)
+{
+$Ip= $pubip[$i].IpConfiguration
+if($Ip -eq $null)
+{
+$UnAttachedIP = $pubip[$i].Name
+$rg = $pubip[$i].ResourceGroupName
+$type = $pubip[$i].PublicIpAllocationMethod
+$result+= New-Object PSObject -Property @{SubscriptionName = ($sub);UnAttachedPublicIp = ($UnAttachedIP);RgName = ($rg);IpType = ($type)}
+}
+}
+$setcontext = New-AzureStorageContext -StorageAccountName "StorageAccountName" -StorageAccountKey "cvFKDVYJwXHGuSnwmqiJqheNNbo/EoQmVpO7n+frWqjIIzNZROHfz+RQY8FJIxPD/V7DnfaNgC6UkyR6/Zhysg=="
+New-Item -Path $fileName -ItemType File 
+$result | Select-Object -Property SubscriptionName,RgName,UnAttachedPublicIp,IpType| Export-Csv -Path $fileName -NoTypeInformation 
+Set-AzureStorageBlobContent -Container "unattachedpublicip" -File $fileName -Context $setcontext
