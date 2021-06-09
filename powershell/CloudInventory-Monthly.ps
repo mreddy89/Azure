@@ -1,0 +1,52 @@
+$connectionName = "AzureRunAsConnection"
+# Get the connection "AzureRunAsConnection "
+try
+{
+$servicePrincipalConnection = Get-AutomationConnection -Name $connectionName 
+"Logging in to Azure..."
+Connect-AzureRmAccount `
+-ServicePrincipal `
+-TenantId $servicePrincipalConnection.TenantId `
+-ApplicationId $servicePrincipalConnection.ApplicationId `
+-CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint 
+}
+catch 
+{
+if (!$servicePrincipalConnection)
+{ 
+$ErrorMessage = "Connection $connectionName not found."
+throw $ErrorMessage
+} 
+else
+{
+Write-Error -Message $_.Exception
+throw $_.Exception
+}
+}
+$date = get-date
+$day = $date.Day
+$month = $date.Month
+$year = $date.Year
+
+$subs = "ABI KR NON-PROD"
+$result = @()
+foreach($sub in $subs)
+{
+$fileName = $sub + "-CloudInv" + "_" + $day + "-" + $month + "-" +  $year + ".csv"
+Select-AzureRmSubscription $sub
+$r = Get-AzureRmResource 
+$i = 0
+for($i -eq 0; $i -lt $r.Count;$i++)
+{
+$RName = $r[$i].Name
+$RG = $r[$i].ResourceGroupName
+$Type = $r[$i].ResourceType
+$Rid = $r[$i].ResourceId
+$loc = $r[$i].Location
+$result+= New-Object PSObject -Property @{SubscriptionName = ($sub);ResourceGroupName = ($RG);ResourceName = ($RName);Location = ($loc);ResourceType = ($Type);ResourceId = ($Rid)}
+}
+}
+$setcontext = New-AzureStorageContext -StorageAccountName "vmrepo" -StorageAccountKey "cvGFAPYJwMVCuSnwmqiJqheNNbo/EoQmVpO7n+frWqjIIzNZROHfz+RQY8FJIxPD/V7DnfaNgC6UkyR6/Zhysg=="
+New-Item -Path $fileName -ItemType File 
+$result | Select-Object -Property SubscriptionName,ResourceGroupName,ResourceName,Location,ResourceType,ResourceId | Export-Csv -Path $fileName -NoTypeInformation 
+Set-AzureStorageBlobContent -Container "cloudinventory" -File $fileName -Context $setcontext
