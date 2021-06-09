@@ -1,0 +1,67 @@
+## This Runbook runs first day of every month and returns Uptime of last 30days. For months with 30days, data will be from 1st to 30 and month with 31 day data will be for 2nd to 31st
+
+$connectionName = "AzureRunAsConnection"
+# Get the connection "AzureRunAsConnection "
+try
+{
+$servicePrincipalConnection = Get-AutomationConnection -Name $connectionName 
+"Logging in to Azure..."
+Connect-AzureRmAccount `
+-ServicePrincipal `
+-TenantId $servicePrincipalConnection.TenantId `
+-ApplicationId $servicePrincipalConnection.ApplicationId `
+-CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint 
+}
+catch 
+{
+if (!$servicePrincipalConnection)
+{ 
+$ErrorMessage = "Connection $connectionName not found."
+throw $ErrorMessage
+} 
+else
+{
+Write-Error -Message $_.Exception
+throw $_.Exception
+}
+}
+
+$sub = "ABI KR NON-PROD"
+$WorkspaceID = 'c6d9304d-bdc3-40e4-b7cf-fd432b89f722'
+
+Select-AzureRMSubscription $sub
+
+$st = (Get-Date).AddDays(-30)
+$y1 = $st.Year
+$m1 = $st.Month
+$d1 = $st.Day
+$s = "" + $y1 + "-" + $m1 +"-" + $d1 
+
+$et = (Get-Date).AddDays(-1)
+$y2 = $et.Year
+$m2 = $et.Month
+$d2 = $et.Day
+$e = "" + $y2 + "-" + $m2 +"-" + $d2 
+
+$fileName = $sub + "-VMUptime" + "_" + $d2 + "-" + $m2 + "-" +  $y2 + ".csv"
+
+$Query = '
+let start_time=startofday(datetime(" '+$s+' "));
+let end_time=endofday(datetime(" '+$e+' "));
+Heartbeat
+| where TimeGenerated > start_time and TimeGenerated < end_time
+| summarize heartbeat_per_hour=count() by bin_at(TimeGenerated, 1h, start_time), Computer
+| extend available_per_hour=iff(heartbeat_per_hour>0, true, false)
+| summarize total_available_hours=countif(available_per_hour==true) by Computer 
+| extend total_number_of_buckets=round((end_time-start_time)/1h)
+| extend availability_rate=total_available_hours*100/total_number_of_buckets 
+'
+
+$Results = Invoke-AzureRmOperationalInsightsQuery -WorkspaceId $WorkspaceID -Query $Query
+
+$uptime = $Results.Results 
+
+$setcontext = New-AzureStorageContext -StorageAccountName "StorageAccountName" -StorageAccountKey "cvGPNWYJwXHGuSnwmqiJqheNNbo/EoQmVpO7n+frWqjIIzNZROHfz+RQY8FJIxPD/V7DnfaNgC6UkyR6/Zhysg=="
+New-Item -Path $fileName -ItemType File 
+$uptime | Export-Csv -Path $fileName -NoTypeInformation 
+Set-AzureStorageBlobContent -Container "vmuptime" -File $fileName -Context $setcontext
