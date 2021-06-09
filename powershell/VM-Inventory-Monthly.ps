@@ -1,0 +1,81 @@
+$connectionName = "AzureRunAsConnection"
+# Get the connection "AzureRunAsConnection "
+try
+{
+$servicePrincipalConnection = Get-AutomationConnection -Name $connectionName 
+"Logging in to Azure..."
+Connect-AzureRmAccount `
+-ServicePrincipal `
+-TenantId $servicePrincipalConnection.TenantId `
+-ApplicationId $servicePrincipalConnection.ApplicationId `
+-CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint 
+}
+catch 
+{
+if (!$servicePrincipalConnection)
+{ 
+$ErrorMessage = "Connection $connectionName not found."
+throw $ErrorMessage
+} 
+else
+{
+Write-Error -Message $_.Exception
+throw $_.Exception
+}
+}
+$sub = "ABI KR Non-Prod"
+$date = get-date
+$day = $date.Day
+$month = $date.Month
+$year = $date.Year
+
+Select-AzureRMSubscription $sub
+$fileName = $sub + "-VMs" + "_" + $day + "-" + $month + "-" +  $year + ".csv"
+$i=0
+    $allvms = get-azureRMVM
+    $allnics = Get-AzureRMNetworkInterface
+
+    $Vm_object = $null
+    $vm_object = @()
+        
+        foreach($vm in $allvms){
+        
+        # Fetching the satus
+        $vm_status = get-azureRMVM -ResourceGroupName $vm.resourcegroupname -name $vm.name -Status
+
+        #Fetching the private IP
+        foreach($nic in $allnics){
+            if($nic.Id -eq $vm.NetworkProfile.NetworkInterfaces.id) {
+            #write-Host $vm.NetworkInterfaceIDs
+            $private_ip_address = $nic.IpConfigurations.privateipaddress
+            }
+        }
+
+            $vm_object_temp = new-object PSObject 
+            $vm_object_temp | add-member -membertype NoteProperty -name "Subscription" -Value $sub
+            $vm_object_temp | add-member -membertype NoteProperty -name "ResourceGroupName" -Value $vm.ResourceGroupName
+            $vm_object_temp | add-member -membertype NoteProperty -name "VMName" -Value $vm.Name
+            $vm_object_temp | add-member -membertype NoteProperty -name "VMStatus" -Value $vm_status.Statuses[1].DisplayStatus
+            $vm_object_temp | add-member -membertype NoteProperty -name "Location" -Value $vm.Location
+            $vm_object_temp | add-member -membertype NoteProperty -name "VMSize" -Value $vm.HardwareProfile.VmSize
+            $vm_object_temp | add-member -membertype NoteProperty -name "OSDisk" -Value $vm.StorageProfile.OsDisk.OsType
+            $vm_object_temp | add-member -membertype NoteProperty -name "OSImageType" -Value $vm.StorageProfile.ImageReference.sku
+            $vm_object_temp | add-member -membertype NoteProperty -name "PrivateIP" -Value $private_ip_address
+
+            $vm_object_temp | add-member -membertype NoteProperty -name "DevOwnerEmail" -Value $vm.Tags.DevOwnerEmail
+            $vm_object_temp | add-member -membertype NoteProperty -name "BusinessOwnerEmail" -Value $vm.Tags.BusinessOwnerEmail
+            $vm_object_temp | add-member -membertype NoteProperty -name "CostCenter" -Value $vm.Tags.CostCenter
+            $vm_object_temp | add-member -membertype NoteProperty -name "ProjectName" -Value $vm.Tags.ProjectName
+            $vm_object_temp | add-member -membertype NoteProperty -name "Department" -Value $vm.Tags.Department
+            $vm_object_temp | add-member -membertype NoteProperty -name "Criticality" -Value $vm.Tags.Criticality
+            $vm_object_temp | add-member -membertype NoteProperty -name "MaintenanceWindow" -Value $vm.Tags.MaintenanceWindow
+
+            $Vm_object += $vm_object_temp
+
+            
+        }
+
+$setcontext = New-AzureStorageContext -StorageAccountName "StorageAccountName" -StorageAccountKey "cvGDNIYJwXHGuSnwmqiJqheNNbo/EoQmVpO7n+frWqjIIzNZROHfz+RQY8FJIxPD/V7DnfaNgC6UkyR6/Zhysg=="
+New-Item -Path $fileName -ItemType File 
+$Vm_object | Export-Csv -Path $fileName -NoTypeInformation 
+Set-AzureStorageBlobContent -Container "vminventory" -File $fileName -Context $setcontext
