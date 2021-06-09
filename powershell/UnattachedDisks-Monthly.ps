@@ -1,0 +1,52 @@
+$connectionName = "AzureRunAsConnection"
+# Get the connection "AzureRunAsConnection "
+try
+{
+$servicePrincipalConnection = Get-AutomationConnection -Name $connectionName 
+"Logging in to Azure..."
+Connect-AzureRmAccount `
+-ServicePrincipal `
+-TenantId $servicePrincipalConnection.TenantId `
+-ApplicationId $servicePrincipalConnection.ApplicationId `
+-CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint 
+}
+catch 
+{
+if (!$servicePrincipalConnection)
+{ 
+$ErrorMessage = "Connection $connectionName not found."
+throw $ErrorMessage
+} 
+else
+{
+Write-Error -Message $_.Exception
+throw $_.Exception
+}
+}
+$sub = "ABI KR Non-Prod"
+$date = get-date
+$day = $date.Day
+$month = $date.Month
+$year = $date.Year
+
+Select-AzureRmSubscription $sub
+$fileName = $sub + "-disk" + "_" + $day + "-" + $month + "-" +  $year + ".csv"
+$i=0
+$result = @()
+$disks = Get-AzureRmDisk
+
+foreach($disk in $disks)
+{
+if($disk.ManagedBy -eq $null)
+{
+$UD = $disk.Name 
+$rg = $disk.ResourceGroupName
+$DS = $disk.DiskSizeGB
+$DT = $disk.Sku.Name
+$result+= New-Object PSObject -Property @{SubscriptionName = ($sub);ResourcegroupName = ($rg);DiskName = ($UD);DiskSizeInGB = ($DS);DiskType = ($DT)}
+}
+}
+$setcontext = New-AzureStorageContext -StorageAccountName "StorageAccountName" -StorageAccountKey "cvGFAPRCwXHGuSnwmqiJqheNNbo/EoQmVpO7n+frWqjIIzNZROHfz+RQY8FJIxPD/V7DnfaNgC6UkyR6/Zhysg=="
+New-Item -Path $fileName -ItemType File 
+$result | Select-Object -Property SubscriptionName,ResourcegroupName,DiskName,DiskSizeInGB,DiskType | Export-Csv -Path $fileName -NoTypeInformation 
+Set-AzureStorageBlobContent -Container "unattacheddisk" -File $fileName -Context $setcontext
