@@ -45,7 +45,7 @@ $type = $pubip[$i].PublicIpAllocationMethod
 $result+= New-Object PSObject -Property @{SubscriptionName = ($sub);UnAttachedPublicIp = ($UnAttachedIP);RgName = ($rg);IpType = ($type)}
 }
 }
-$setcontext = New-AzureStorageContext -StorageAccountName "StorageAccountName" -StorageAccountKey "cvFKDVYJwXHGuSnwmqiJqheNNbo/EoQmVpO7n+frWqjIIzNZROHfz+RQY8FJIxPD/V7DnfaNgC6UkyR6/Zhysg=="
+$setcontext = New-AzureStorageContext -StorageAccountName "StorageAccountName" -StorageAccountKey "storagekey"
 New-Item -Path $fileName -ItemType File 
 $result | Select-Object -Property SubscriptionName,RgName,UnAttachedPublicIp,IpType| Export-Csv -Path $fileName -NoTypeInformation 
 Set-AzureStorageBlobContent -Container "unattachedpublicip" -File $fileName -Context $setcontext
