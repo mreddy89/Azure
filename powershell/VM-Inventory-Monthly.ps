@@ -75,7 +75,7 @@ $i=0
             
         }
 
-$setcontext = New-AzureStorageContext -StorageAccountName "StorageAccountName" -StorageAccountKey "cvGDNIYJwXHGuSnwmqiJqheNNbo/EoQmVpO7n+frWqjIIzNZROHfz+RQY8FJIxPD/V7DnfaNgC6UkyR6/Zhysg=="
+$setcontext = New-AzureStorageContext -StorageAccountName "StorageAccountName" -StorageAccountKey "storagekey"
 New-Item -Path $fileName -ItemType File 
 $Vm_object | Export-Csv -Path $fileName -NoTypeInformation 
 Set-AzureStorageBlobContent -Container "vminventory" -File $fileName -Context $setcontext
