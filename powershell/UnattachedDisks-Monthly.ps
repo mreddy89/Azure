@@ -46,7 +46,7 @@ $DT = $disk.Sku.Name
 $result+= New-Object PSObject -Property @{SubscriptionName = ($sub);ResourcegroupName = ($rg);DiskName = ($UD);DiskSizeInGB = ($DS);DiskType = ($DT)}
 }
 }
-$setcontext = New-AzureStorageContext -StorageAccountName "StorageAccountName" -StorageAccountKey "cvGFAPRCwXHGuSnwmqiJqheNNbo/EoQmVpO7n+frWqjIIzNZROHfz+RQY8FJIxPD/V7DnfaNgC6UkyR6/Zhysg=="
+$setcontext = New-AzureStorageContext -StorageAccountName "StorageAccountName" -StorageAccountKey "storagekey"
 New-Item -Path $fileName -ItemType File 
 $result | Select-Object -Property SubscriptionName,ResourcegroupName,DiskName,DiskSizeInGB,DiskType | Export-Csv -Path $fileName -NoTypeInformation 
 Set-AzureStorageBlobContent -Container "unattacheddisk" -File $fileName -Context $setcontext
