@@ -49,7 +49,7 @@ $BusinessOwnerEmail = $rgs[$i].Tags.BusinessOwnerEmail
 $DevOwnerEmail = $rgs[$i].Tags.DevOwnerEmail
 $result+= New-Object PSObject -Property @{SubscriptionName = ($sub);ResourcegroupName = ($rgname);Tags = ($tags);DevOwnerEmail = ($DevOwnerEmail);BusinessOwnerEmail = ($BusinessOwnerEmail);CostCenter = ($CostCenter);ProjectName = ($ProjectName);Department = ($Department);Criticality = ($Criticality);MaintenanceWindow = ($MaintenanceWindow)}
 }
-$setcontext = New-AzureStorageContext -StorageAccountName "StorageAccountName" -StorageAccountKey "cvGFAPYJwVBHuSnwmqiJqheNNbo/EoQmVpO7n+frWqjIIzNZROHfz+RQY8FJIxPD/V7DnfaNgC6UkyR6/Zhysg=="
+$setcontext = New-AzureStorageContext -StorageAccountName "StorageAccountName" -StorageAccountKey "storagekey"
 New-Item -Path $fileName -ItemType File 
 $result | Select-Object -Property SubscriptionName,ResourcegroupName,Tags,DevOwnerEmail,BusinessOwnerEmail,CostCenter,ProjectName,Department,Criticality,MaintenanceWindow | Export-Csv -Path $fileName -NoTypeInformation 
 Set-AzureStorageBlobContent -Container "rgtags" -File $fileName -Context $setcontext
