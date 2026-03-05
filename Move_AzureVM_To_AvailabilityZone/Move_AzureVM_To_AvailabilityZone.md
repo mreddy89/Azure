@@ -5,6 +5,12 @@
 In this article, I’ll walk through my hands‑on experience of moving a single-instance Azure VM from a regional deployment to an Availability Zone within the same Azure region.
 
 <br>
+<img width="624" height="344" alt="image" src="https://github.com/user-attachments/assets/01fa0f6d-d645-44dc-8ab5-9647fca3c490" />
+<br>
+
+## Process Flow (Validation → Move → Cutover)
+<img width="4032" height="2071" alt="image" src="https://github.com/user-attachments/assets/39a0f9ed-2475-479c-a703-0c10e20791a1" />
+
 
 ## Scenario Overview
 I had a Virtual Machine named testvmun01 deployed in the UAE North region.
@@ -170,3 +176,8 @@ To move it back:
 ✅ The VM is now back in the original resource group, but with Availability Zone enabled.
 
 <img width="940" height="56" alt="image" src="https://github.com/user-attachments/assets/85dacdaf-55ac-4f80-981c-75377a217655" />
+
+## Key Takeaway
+
+**Azure makes it possible to retrofit high availability into existing single-instance VMs using Availability Zones—without rebuilding from scratch. However, understanding what gets recreated and what needs reconfiguration is critical for a smooth transition. \
+If you’re running production workloads without Availability Zones, this is a high-impact, low-effort improvement worth considering.**
