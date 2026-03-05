@@ -99,3 +99,60 @@ Basic SKU Public IPs are not retained
 A Standard SKU Public IP is created by default
 You can select an existing Standard Public IP if required
 
+<img width="320" height="125" alt="image" src="https://github.com/user-attachments/assets/b889c1cd-6718-46ab-a730-00a16b9f780f" />
+
+<img width="940" height="988" alt="image" src="https://github.com/user-attachments/assets/e8218eb5-2056-46d1-b552-abf9085b0e04" />
+
+## Result: VM Successfully Moved to Availability Zone ✅
+- The **testvmun01** has been moved to Availability Zone.
+
+<img width="940" height="819" alt="image" src="https://github.com/user-attachments/assets/64673ede-5a34-4724-a437-b5d929998cd0" />
+
+## Downtime Considerations
+During this process:
+
+⚠️ The source VM is stopped, causing brief downtime \
+✅ A new zonal VM is created and brought online 
+
+This is important to plan for, especially for production workloads.
+
+## Post-Move Configuration (Very Important)
+After the move, review and reconfigure the following as needed:
+
+- VM Extensions
+- RBAC assignments
+- Public IP association
+- Backup configuration
+- Disaster Recovery settings
+- Monitoring and alerts
+
+Think of this as a new VM with inherited data, not a 100% identical clone.
+
+## Cleanup Tasks
+
+Delete source VM
+The source VM remains in a stopped mode after the move is complete. You can choose to either delete it or use it for another purpose, based on your requirements.
+<img width="940" height="568" alt="image" src="https://github.com/user-attachments/assets/01c1dd06-87ca-437b-a56e-2ef2a76461c6" />
+
+Delete additional resources created for move
+After the move, you can manually delete the move collection that was created.
+To manually remove the move collection that was made, follow these steps:
+- Ensure you can view hidden resources as the move collection is hidden by default.
+- Select the Resource group of the move collection using the search string ZonalMove-MC-RG-SourceRegion.
+- Delete the move collection. For example, ZonalMove-MC-RG-UAENorth.
+
+**Note** : The move collection is hidden and must be turned on to view it.
+
+<img width="514" height="904" alt="image" src="https://github.com/user-attachments/assets/bb906407-2b96-42e3-a553-f52fed40bc61" />
+
+
+
+
+
+
+
+
+
+
+
+
