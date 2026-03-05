@@ -145,14 +145,28 @@ To manually remove the move collection that was made, follow these steps:
 
 <img width="514" height="904" alt="image" src="https://github.com/user-attachments/assets/bb906407-2b96-42e3-a553-f52fed40bc61" />
 
+## Final Step: Move VM Back to Original Resource Group
+
+By default, the new zonal VM is placed in a new resource group.
+To move it back:
+
+- Go to the new VM’s resource group
+- Select all related resources
+- Click Move → Move to another resource group
+- Select the original resource group: rg-test-un-01
+- Run validation
+- Click Move
+- Power off the VM
+- Reassign the original IP address (if required)
+- Start the VM
+
+<img width="940" height="1013" alt="image" src="https://github.com/user-attachments/assets/9fb28a71-9257-4151-bcb4-6ce41affbecb" />
+
+<img width="940" height="452" alt="image" src="https://github.com/user-attachments/assets/29cbd803-27ec-466e-8787-8eba9cab4fc2" />
+
+<img width="940" height="1173" alt="image" src="https://github.com/user-attachments/assets/0c5801f5-94d3-4d3c-a85a-ca8c5ac0a3fa" />
 
 
+✅ The VM is now back in the original resource group, but with Availability Zone enabled.
 
-
-
-
-
-
-
-
-
+<img width="940" height="56" alt="image" src="https://github.com/user-attachments/assets/85dacdaf-55ac-4f80-981c-75377a217655" />
